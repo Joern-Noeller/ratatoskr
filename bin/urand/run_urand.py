@@ -168,6 +168,36 @@ def get_latencies(latencies_results_file):
     return(latencies)
 ###############################################################################
 
+def get_bandwidth(bandwidth_results_file):
+    """
+    Read the resulting latencies from the csv file.
+
+    Parameters:
+        - results_file: the path to the result file.
+
+    Return:
+        - A list of the filt, packet and network latencies.
+    """
+    totalData = 0
+    simStart = -1
+    simStop = -1
+    try:
+        with open(bandwidth_results_file, newline='') as f:
+            spamreader = csv.reader(f, delimiter=' ', quotechar='|')
+            next(spamreader)
+            for row in spamreader:
+                if(simStart == -1): simStart = float(row[0])
+                simStop = float(row[0])
+                totalData = totalData + float(row[1])
+    except Exception:
+        # Add dummy values to latencies, -1.
+        return -1
+
+    if(simStart < simStop):
+        return(totalData/(simStop-simStart)*1000)
+    else:
+        return -1
+###############################################################################
 
 def begin_individual_sim(config, restart, injectionRates, injIter):
     """
@@ -214,6 +244,9 @@ def begin_all_sims(config):
     latenciesPacket = -np.ones((len(injectionRates), config.restarts))
     latenciesNetwork = -np.ones((len(injectionRates), config.restarts))
 
+    #Initialize Bandwidth
+    bandwidths = -np.zeros((len(injectionRates), config.restarts))
+ 
     # Run the full simulation (for all injection rates).
     injIter = 0
     VCUsage = []
@@ -232,6 +265,8 @@ def begin_all_sims(config):
             latenciesFlit[injIter, restart] = lat[0]
             latenciesPacket[injIter, restart] = lat[1]
             latenciesNetwork[injIter, restart] = lat[2]
+            bndw = get_bandwidth(currentSimdir + '/report__Bandwidth_Input.csv')
+            bandwidths[injIter, restart] = bndw
             VCUsage_run = combine_VC_hists(currentSimdir + '/VCUsage')
             if VCUsage_run is not None:
                 for ix, layer_df in enumerate(VCUsage_run):
@@ -266,6 +301,7 @@ def begin_all_sims(config):
     results = {'latenciesFlit': latenciesFlit,
                'latenciesNetwork': latenciesNetwork,
                'latenciesPacket': latenciesPacket,
+               'bandwdiths' : bandwidths,
                'injectionRates': injectionRates,
                'VCUsage': VCUsage,
                'BuffUsage': BuffUsage}
