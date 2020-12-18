@@ -176,7 +176,7 @@ def get_bandwidth(bandwidth_results_file):
         - results_file: the path to the result file.
 
     Return:
-        - A list of the filt, packet and network latencies.
+        - A list of the average network bandwidth.
     """
     totalData = 0
     simStart = -1
@@ -265,7 +265,7 @@ def begin_all_sims(config):
             latenciesFlit[injIter, restart] = lat[0]
             latenciesPacket[injIter, restart] = lat[1]
             latenciesNetwork[injIter, restart] = lat[2]
-            bndw = get_bandwidth(currentSimdir + '/report__Bandwidth_Input.csv')
+            bndw = get_bandwidth(currentSimdir + '/report_Bandwidth_Input.csv')
             bandwidths[injIter, restart] = bndw
             VCUsage_run = combine_VC_hists(currentSimdir + '/VCUsage')
             if VCUsage_run is not None:
@@ -301,7 +301,7 @@ def begin_all_sims(config):
     results = {'latenciesFlit': latenciesFlit,
                'latenciesNetwork': latenciesNetwork,
                'latenciesPacket': latenciesPacket,
-               'bandwdiths' : bandwidths,
+               'bandwidths' : bandwidths,
                'injectionRates': injectionRates,
                'VCUsage': VCUsage,
                'BuffUsage': BuffUsage}

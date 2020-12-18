@@ -596,7 +596,7 @@ void GlobalReport::reportNoCBandwidthOutput(ostream& csvfile) {
     bitsInBin = 0;
     for( auto const& [key, val] : noCOutputDataAmount )
     {
-        csvfile << boost::format("%i, %i\n")%key.to_double()%val;
+        csvfile << boost::format("%i, %i\n")%key.to_double()%val;           //Picosec, delta_Data[bits]
         if (key.to_double()/1000.0 < binStart + binSize){
             bitsInBin += val;
         } else{
