@@ -33,12 +33,6 @@ def movingAverage(dataReader):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', action='version', version='%(prog)s 1.0')
-    parser.add_argument("-v", "--verbose", help="increase output verbosity",
-                    action="store_true")
-    parser.add_argument("-d", "--debug", help="enable debug mode",
-                    action="store_true")
-    parser.add_argument("-pf", "--pdf", help="print to pdf",
-                    action="store_true")
     parser.add_argument("-dp", "--display", help="display plots",
                     action="store_true")
     parser.add_argument("-f", "--file", 

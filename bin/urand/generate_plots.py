@@ -56,7 +56,8 @@ def plot_latencies(results):
     fig = plt.figure()
     plt.ylabel('Latencies in ns', fontsize=11)
     plt.xlabel('Injection Rate', fontsize=11)
-    plt.xlim([0, 0.85])
+    plt.xlim([0, float(max(injectionRates))*1.1])
+    plt.ylim([0,float(max(meanLatenciesPacket))*1.1])
     linestyle = {'linestyle': '--', 'linewidth': 1, 'markeredgewidth': 1,
                  'elinewidth': 1, 'capsize': 10}
     plt.errorbar(injectionRates, meanLatenciesFlit,
