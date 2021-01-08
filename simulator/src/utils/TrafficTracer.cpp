@@ -31,11 +31,27 @@ TrafficTracer::TrafficTracer()
 }
 
 void TrafficTracer::traceFlit(Flit *flit) {
-    float injTime = flit->injectionTime/(float) 1000;
-    tracefile << boost::format("%10.10f, %i, %i, %i, %i\n")
+    float injTime = flit->injectionTime/(float) 1;//1000;
+    char type;
+        switch (flit->type) {
+    case HEAD:
+        type = 'H';
+        break;
+    case BODY:
+        type = 'B';
+        break;
+    case TAIL:
+        type = 'T';
+        break;
+    case SINGLE:
+        type = 'S';
+        break;
+    }
+    tracefile << boost::format("%10.10f, %i, %i, %i, %i, %c\n")
         % injTime
         % flit->packet->src.id
         % flit->packet->dst.id
         % flit->packet->idcnt
-        % flit->id;
+        % flit->id
+        % type;
 }
