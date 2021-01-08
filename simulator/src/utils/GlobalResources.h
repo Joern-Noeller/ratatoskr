@@ -115,6 +115,10 @@ private:
 
     void readAttributeIfExists(pugi::xml_node, const char*, int&);
 
+    void readFloatAttributeIfExists(pugi::xml_node, const char*, const char*, float&);
+
+    void readFloatAttributeIfExists(pugi::xml_node, const char*, float&);
+
     void readTaskFile(const std::string& taskFilePath, const std::map<int, int>& bindings);
 
     std::map<int, int> readMappingFile(const std::string& mappingFilePath);
@@ -122,6 +126,8 @@ private:
     std::string readRequiredStringAttribute(pugi::xml_node, const char*, const char*);
 
     std::string readRequiredStringAttribute(pugi::xml_node, const char*);
+
+    std::string readRequiredStringChildValue(pugi::xml_node, const char*);
 
     int readRequiredIntAttribute(pugi::xml_node, const char*, const char*);
 

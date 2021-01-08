@@ -85,6 +85,18 @@ void GlobalResources::readAttributeIfExists(pugi::xml_node node, const char* att
     }
 }
 
+void GlobalResources::readFloatAttributeIfExists(pugi::xml_node node, const char* child, const char* attribute, float& var)
+{
+    readFloatAttributeIfExists(node.child(child), attribute, var);
+}
+
+void GlobalResources::readFloatAttributeIfExists(pugi::xml_node node, const char* attribute, float& var)
+{
+    if (!node.attribute(attribute).empty()) {
+        var = node.attribute(attribute).as_float();
+    }
+}
+
 int GlobalResources::readRequiredIntAttribute(pugi::xml_node node, const char* child, const char* attribute)
 {
     return readRequiredIntAttribute(node.child(child), attribute);
@@ -111,8 +123,7 @@ float GlobalResources::readRequiredFloatAttribute(pugi::xml_node node, const cha
     return node.attribute(attribute).as_float();
 }
 
-std::string
-GlobalResources::readRequiredStringAttribute(pugi::xml_node node, const char* child, const char* attribute)
+std::string GlobalResources::readRequiredStringAttribute(pugi::xml_node node, const char* child, const char* attribute)
 {
     return readRequiredStringAttribute(node.child(child), attribute);
 }
@@ -123,6 +134,14 @@ std::string GlobalResources::readRequiredStringAttribute(pugi::xml_node node, co
         FATAL("Can not read node:" << node.path() << " " << attribute);
     }
     return node.attribute(attribute).as_string();
+}
+
+std::string GlobalResources::readRequiredStringChildValue(pugi::xml_node node, const char* child)
+{
+    if (node.child(child).empty()) {
+        FATAL("Can not read node:" << node.child(child).path());
+    }
+    return node.child_value(child);
 }
 
 std::vector<std::string> GlobalResources::string_split(const std::string& str, const std::string& delim)
@@ -165,11 +184,11 @@ void GlobalResources::readConfigFile(const std::string& configPath)
 
     //NOC
     pugi::xml_node noc_node = doc.child("configuration").child("noc");
-    noc_file = noc_node.child_value("nocFile");
-    flitsPerPacket = noc_node.child("flitsPerPacket").attribute("value").as_int();
-    bitWidth = noc_node.child("bitWidth").attribute("value").as_int();
-    routingVerticalThreshold = noc_node.child("routingVerticalThreshold").attribute("value").as_float();
-    Vdd = noc_node.child("Vdd").attribute("value").as_float();
+    noc_file = readRequiredStringChildValue(noc_node, "nocFile");
+    flitsPerPacket = readRequiredIntAttribute(noc_node, "flitsPerPacket", "value");
+    readAttributeIfExists(noc_node, "bitWidth", "value",bitWidth);
+    readFloatAttributeIfExists(noc_node, "routingVerticalThreshold", "value", routingVerticalThreshold);
+    readFloatAttributeIfExists(noc_node, "Vdd", "value", Vdd);
 
     //APPLICATION
     pugi::xml_node app_node = doc.child("configuration").child("application");
