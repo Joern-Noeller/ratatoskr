@@ -75,6 +75,51 @@ def plot_latencies(results):
 ###############################################################################
 
 
+def plot_latenciesBandwidth(results):
+    """
+    Read the raw results from a dictionary of objects, then plot the latencies.
+
+    Parameters:
+        - results: a dictionary of raw data from the pickle file.
+
+    Return:
+        - None.
+    """
+    latenciesFlit = results['latenciesFlit']
+    latenciesNetwork = results['latenciesNetwork']
+    latenciesPacket = results['latenciesPacket']
+    bandwidths = results['bandwidths']
+
+    meanBandwidths = np.mean(bandwidths, axis=1)
+    meanLatenciesFlit = np.mean(latenciesFlit, axis=1)
+    meanLatenciesPacket = np.mean(latenciesPacket, axis=1)
+    meanLatenciesNetwork = np.mean(latenciesNetwork, axis=1)
+    stdLatenciesFlit = np.std(latenciesFlit, axis=1)
+    stdLatenciesPacket = np.std(latenciesPacket, axis=1)
+    stdLatenciesNetwork = np.std(latenciesNetwork, axis=1)
+
+    fig = plt.figure()
+    plt.ylabel('Latencies in ns', fontsize=11)
+    plt.xlabel('bandwidth ', fontsize=11)
+    plt.xlim([0, float(max(meanBandwidths))*1.1])
+    plt.ylim([0,float(max(meanLatenciesPacket))*1.1])
+    linestyle = {'linestyle': '--', 'linewidth': 1, 'markeredgewidth': 1,
+                 'elinewidth': 1, 'capsize': 10}
+    plt.errorbar(meanBandwidths, meanLatenciesFlit,
+                 color='r', **linestyle, marker='*')
+    plt.errorbar(meanBandwidths, meanLatenciesNetwork,
+                 yerr=stdLatenciesNetwork, color='b', **linestyle,
+                 marker='s')
+    plt.errorbar(meanBandwidths, meanLatenciesPacket, yerr=stdLatenciesPacket,
+                 color='g', **linestyle, marker='^')
+
+    plt.legend(['Flit', 'Network', 'Packet'])
+    fig.suptitle('Latencies/Bandwidth', fontsize=16)
+    # plt.show()
+    fig.savefig('latencies_Bandwidth.pdf')
+###############################################################################
+
+
 def plot_VCUsage_stats(inj_dfs, inj_rates):
     """
     Plot the VC usage statistics.
@@ -194,6 +239,8 @@ def main():
     results = read_raw_results('rawResults.pkl')
 
     plot_latencies(results)
+
+    plot_latenciesBandwidth(results)
 
     plot_VCUsage_stats(results['VCUsage'], results['injectionRates'])
 
