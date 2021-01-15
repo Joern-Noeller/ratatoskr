@@ -70,6 +70,8 @@ def write_config_file(config, configFileSrc, configFileDst, injectionRate):
     configTree.find('general/simulationTime').set('value', str(config.simulationTime))
     configTree.find('general/outputToFile').set('value', 'true')
     configTree.find('general/outputToFile').text = 'report'
+    configTree.find('general/flitTracing').text = str(config.outputTraceFile)
+    configTree.find('general/flitTracing').set('value', str(config.outputTraces))
 
     for elem in list(configTree.find('application/synthetic').iter()):
         if elem.get('name') == 'warmup':
@@ -183,7 +185,7 @@ def get_bandwidth(bandwidth_results_file):
     simStop = -1
     try:
         with open(bandwidth_results_file, newline='') as f:
-            spamreader = csv.reader(f, delimiter=' ', quotechar='|')
+            spamreader = csv.reader(f, delimiter=',', quotechar='|')
             next(spamreader)
             for row in spamreader:
                 if(simStart == -1): simStart = float(row[0])
@@ -278,6 +280,9 @@ def begin_all_sims(config):
                         BuffUsage_inj[l][d] = BuffUsage_inj[l][d].add(
                                 BuffUsage_run[l][d], fill_value=0)
             # input('press any key')
+            if(config.outputTraces):
+                os.makedirs('traces', exist_ok=True)
+                shutil.copyfile(currentSimdir + '/' + str(config.outputTraceFile),'traces/' + 'inj-' + str(injIter) + '_run-'+ str(restart) + '_' + str(config.outputTraceFile))
             shutil.rmtree(currentSimdir)
 
         # Calculate the average and std for VC usage.

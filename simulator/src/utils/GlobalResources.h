@@ -41,6 +41,7 @@ public:
     bool outputToFile;
     bool activateFlitTracing;
     std::string outputFileName;
+    std::string outputTraceFileName;
     std::string noc_file;
     int flitsPerPacket = 0;
     int bitWidth = 32;

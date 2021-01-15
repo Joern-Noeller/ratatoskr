@@ -1,12 +1,14 @@
 <?xml version="1.0" ?>
 <configuration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <general>
-    <simulationTime value="100000"/>
+    <simulationTime value="10000"/>
     <outputToFile value="true">report</outputToFile>
+    <flitTracing value="true">Trace</flitTracing>
   </general>
   <noc>
     <nocFile>config/network.xml</nocFile>
-    <flitsPerPacket value="10"/>
+    <flitsPerPacket value="32"/>
+    <bitWidth value="8"/>
     <Vdd value="5"/>
   </noc>
   <application>
@@ -44,22 +46,22 @@
     <processingElements>
       <function_calls value="false"/>
       <send_flit value="false"/>
-      <send_head_flit value="true"/>
+      <send_head_flit value="false"/>
       <receive_flit value="false"/>
-      <receive_tail_flit value="true"/>
+      <receive_tail_flit value="false"/>
       <throttle value="false"/>
       <reset value="false"/>
     </processingElements>
     <router>
       <function_calls value="false"/>
       <send_flit value="false"/>
-      <send_head_flit value="true"/>
+      <send_head_flit value="false"/>
       <receive_flit value="false"/>
-      <receive_tail_flit value="true"/>
+      <receive_tail_flit value="false"/>
       <throttle value="false"/>
       <reset value="false"/>
       <assign_channel value="false"/>
-      <buffer_overflow value="true"/>
+      <buffer_overflow value="false"/>
     </router>
     <netrace>
       <inject value="true"/>
@@ -75,6 +77,6 @@
     </tasks>
   </verbose>
   <report>
-    <bufferReportRouters>1 2 3 4</bufferReportRouters>
+    <bufferReportRouters>5 6 9 10 21 22 25 26</bufferReportRouters>
   </report>
 </configuration>

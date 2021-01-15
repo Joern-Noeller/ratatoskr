@@ -60,6 +60,8 @@ class Configuration:
             self.numCores = multiprocessing.cpu_count()
 
         self.bufferReportRouters = config['Report']['bufferReportRouters']
+        self.outputTraceFile = config['Report']['outputTraceFile']
+        self.outputTraces = self.outputTraceFile != ''
         try:
                 self.bufferReportRouters = self.bufferReportRouters[1:len(self.bufferReportRouters)-1]
         except Exception:

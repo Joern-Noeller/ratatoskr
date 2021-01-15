@@ -25,7 +25,7 @@
 TrafficTracer::TrafficTracer()
 {
     if (globalResources.activateFlitTracing){
-        tracefile.open("flitTrace_" + std::to_string(globalResources.rd_seed) + ".csv");
+        tracefile.open(globalResources.outputTraceFileName);
         tracefile << boost::format ("time, src, dst, packetid, flitid, type\n");
     }
 }

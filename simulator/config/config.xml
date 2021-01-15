@@ -3,6 +3,7 @@
   <general>
     <simulationTime value="1500"/>
     <outputToFile value="true">report</outputToFile>
+    <flitTracing value="false"></flitTracing>
   </general>
   <noc>
     <nocFile>config/network.xml</nocFile>

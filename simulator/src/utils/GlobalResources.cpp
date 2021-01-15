@@ -37,6 +37,7 @@ GlobalResources::GlobalResources()
     auto seed = std::random_device{}();
     rand->seed(seed);
     rd_seed = seed;
+    outputTraceFileName = "flitTrace_" + std::to_string(rd_seed) + ".csv";
 #ifdef ENABLE_NETRACE
     for (int i = 0; i < 64; ++i) {
         if (netrace2Dor3Dmode){
@@ -181,7 +182,8 @@ void GlobalResources::readConfigFile(const std::string& configPath)
     outputToFile = gen_node.child("outputToFile").attribute("value").as_bool();
     outputFileName = gen_node.child("outputToFile").child_value();
     activateFlitTracing = gen_node.child("flitTracing").attribute("value").as_bool();
-
+    outputTraceFileName = gen_node.child_value("flitTracing");
+    outputTraceFileName += (outputTraceFileName == "") ? ("flitTrace_" + std::to_string(rd_seed) + ".csv") : ""; //if name is empty: random name
     //NOC
     pugi::xml_node noc_node = doc.child("configuration").child("noc");
     noc_file = readRequiredStringChildValue(noc_node, "nocFile");
