@@ -27,6 +27,7 @@ import xml.etree.ElementTree as ET
 import csv
 import numpy as np
 from joblib import Parallel, delayed
+import multiprocessing
 import pickle
 import pandas as pd
 from combine_hists import combine_VC_hists, combine_Buff_hists,\
@@ -216,15 +217,33 @@ def begin_individual_sim(config, restart, injectionRates, injIter):
     """
     print('Simulation with injection rate: ' + str(injectionRates[injIter])
             + ' restart ' + str(restart))
-    currentSimDir = config.simDir + str(restart)
+    currentSimDir = config.simDir  + str(injIter) + "_" + str(restart) 
     currentConfDir = currentSimDir + '/config'
     write_sim_files(config, currentSimDir)
     write_config_file(config, 'config/config.xml', currentConfDir + '/config.xml',
                       injectionRates[injIter])
     run_indivisual_sim(currentSimDir, config.basedir)
+
+    #extract Data
+    lat = get_latencies(currentSimDir + '/report_Performance.csv')
+    bndw = get_bandwidth(currentSimDir + '/report_Bandwidth_Input.csv')
+    VCUsage_run = combine_VC_hists(currentSimDir + '/VCUsage')
+    BuffUsage = combine_Buff_hists(currentSimDir + '/BuffUsage')
+    ##combine Data
+    retDict = {'latencies':lat,'bandwidth':bndw,'VCUsage':VCUsage_run,'BuffUsage':BuffUsage}
+    ##return Tupel : indexing Tupel + Data Dictionary
+    retTpl = ((injIter,restart), retDict) 
+
+    #Extract Tracefile + cleanup
+    if(config.outputTraces):
+        os.makedirs('traces', exist_ok=True)
+        shutil.copyfile(currentSimDir + '/' + str(config.outputTraceFile),'traces/' + 'inj-' + str(injIter) + '_run-'+ str(restart) + '_' + str(config.outputTraceFile))
+    shutil.rmtree(currentSimDir) 
+
+    return retTpl  
 ###############################################################################
 
-
+#!!! Needs more than one urand-run in either injectionrates or restarts
 def begin_all_sims(config):
     """
     Begin all simulations.
@@ -246,60 +265,84 @@ def begin_all_sims(config):
     latenciesPacket = -np.ones((len(injectionRates), config.restarts))
     latenciesNetwork = -np.ones((len(injectionRates), config.restarts))
 
-    #Initialize Bandwidth
+    # Initialize Bandwidth
     bandwidths = -np.zeros((len(injectionRates), config.restarts))
- 
-    # Run the full simulation (for all injection rates).
-    injIter = 0
+
+
+    # setup for processing pool:
+    inputArgs = []
+
+    ## setup input argument Tupel List
+    for injIter in range (len(injectionRates)):
+        for restart in range (config.restarts):
+            inputArgs.append((config, restart, injectionRates, injIter))  
+   
+    ## set Thread/Process-count
+        threadCount = config.numCores
+    if threadCount == -1:
+        threadCount = multiprocessing.cpu_count()
+    
+    # setup Procces-Pool and Run Simulations
+    print('Starting Sims with ' + str(threadCount) + ' processes')   
+    pool = multiprocessing.Pool(threadCount)
+    unsortedRetValues = pool.starmap(begin_individual_sim,inputArgs)
+
+    # sort returnValues
+    retValues = sorted(unsortedRetValues)
+
+    # process Returned Data 
     VCUsage = []
     BuffUsage = []
-    for inj in injectionRates:
-        print('Starting Sims with ' + str(config.numCores) + ' processes')
-        Parallel(n_jobs=config.numCores)(delayed(begin_individual_sim)
-        (config, restart, injectionRates, injIter) for restart in range(config.restarts))
+    VCUsage_inj = []
+    BuffUsage_inj = []
+    #create 'virtual' nested for loop with iterators injIter and restarts
+    for i,tpl in enumerate(retValues):
+        injIter = tpl[0][0]
+        restart = tpl[0][1]
+        if(retValues[i-1][0][0] != injIter):  #+1 in 'outer' for loop: last outer index != this index execute pre inner loop code: 
+            VCUsage_inj = [pd.DataFrame() for i in range(3)]
+            BuffUsage_inj = init_data_structure()   
+        #inner for loop:
+        lat = tpl[1]['latencies']
+        latenciesFlit[injIter, restart] = lat[0]
+        latenciesPacket[injIter, restart] = lat[1]
+        latenciesNetwork[injIter, restart] = lat[2] 
+        bndw = tpl[1]['bandwidth']
+        bandwidths[injIter, restart] = bndw      
 
-        VCUsage_inj = [pd.DataFrame() for i in range(3)]
-        BuffUsage_inj = init_data_structure()  # a dict of dicts
-        # Run the simulation several times for each injection rate.
-        for restart in range(config.restarts):
-            currentSimdir = 'sim' + str(restart)
-            lat = get_latencies(currentSimdir + '/report_Performance.csv')
-            latenciesFlit[injIter, restart] = lat[0]
-            latenciesPacket[injIter, restart] = lat[1]
-            latenciesNetwork[injIter, restart] = lat[2]
-            bndw = get_bandwidth(currentSimdir + '/report_Bandwidth_Input.csv')
-            bandwidths[injIter, restart] = bndw
-            VCUsage_run = combine_VC_hists(currentSimdir + '/VCUsage')
-            if VCUsage_run is not None:
-                for ix, layer_df in enumerate(VCUsage_run):
-                    VCUsage_inj[ix] = pd.concat([VCUsage_inj[ix], layer_df])
-            BuffUsage_run = combine_Buff_hists(currentSimdir + '/BuffUsage')
-            if BuffUsage_run is not None:
-                for l in BuffUsage_inj:
-                    for d in BuffUsage_inj[l]:
-                        BuffUsage_inj[l][d] = BuffUsage_inj[l][d].add(
-                                BuffUsage_run[l][d], fill_value=0)
-            # input('press any key')
-            if(config.outputTraces):
-                os.makedirs('traces', exist_ok=True)
-                shutil.copyfile(currentSimdir + '/' + str(config.outputTraceFile),'traces/' + 'inj-' + str(injIter) + '_run-'+ str(restart) + '_' + str(config.outputTraceFile))
-            shutil.rmtree(currentSimdir)
+        VCUsage_run = tpl[1]['VCUsage']
+        BuffUsage_run = tpl[1]['BuffUsage']
+        if VCUsage_run is not None:
+            for ix, layer_df in enumerate(VCUsage_run):
+                VCUsage_inj[ix] = pd.concat([VCUsage_inj[ix], layer_df])
+        if BuffUsage_run is not None:
+            for l in BuffUsage_inj:
+                for d in BuffUsage_inj[l]:
+                    BuffUsage_inj[l][d] = BuffUsage_inj[l][d].add(
+                            BuffUsage_run[l][d], fill_value=0)
+        
+        #code after inner for loop: check if next elements outer index != this elemnts outer index
+        switch = False
+        if( i+1 >= len(retValues)):
+            switch = True
+        elif(retValues[(i+1)][0][0] != injIter):
+            switch = True
+        
+        if(switch):
+            # Calculate the average and std for VC usage.
+            VCUsage_temp = []
+            for df in VCUsage_inj:
+                if not df.empty:
+                    VCUsage_temp.append(df.groupby(df.index).agg(['mean', 'std']))
+            VCUsage.append(VCUsage_temp)
 
-        # Calculate the average and std for VC usage.
-        VCUsage_temp = []
-        for df in VCUsage_inj:
-            if not df.empty:
-                VCUsage_temp.append(df.groupby(df.index).agg(['mean', 'std']))
-        VCUsage.append(VCUsage_temp)
-
-        # Average the buffer usage over restarts.
-        BuffUsage_temp = init_data_structure()  # a dict of dicts
-        for l in BuffUsage_inj:
-            for d in BuffUsage_inj[l]:
-                BuffUsage_temp[l][d] = np.ceil(BuffUsage_inj[l][d] / config.restarts)
-        BuffUsage.append(BuffUsage_temp)
-
-        injIter += 1
+            # Average the buffer usage over restarts.
+            BuffUsage_temp = init_data_structure()  # a dict of dicts
+            for l in BuffUsage_inj:
+                for d in BuffUsage_inj[l]:
+                    BuffUsage_temp[l][d] = np.ceil(BuffUsage_inj[l][d] / config.restarts)
+            BuffUsage.append(BuffUsage_temp)
+        
 
     print('Executed all sims of all injection rates.')
 
